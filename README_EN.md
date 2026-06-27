@@ -17,11 +17,11 @@
 
 ![Good-Badminton analysis preview](assets/demo_en.gif)
 
-Video preview: `assets/demo_en.mp4`.
 
 ## 🆕 Changelog
 
-- **2026-06-24**: Added Gradio WebUI for browser-based video upload, court detection, parameter configuration, and result viewing.
+- **2026-06-27**: Improved automatic court-line detection.
+- **2026-06-24**: Added Gradio WebUI, - From KangweiLIAO PR.
 - **2026-06-23**: Added automatic court boundary detection.
 - **2026-06-20**: Initial open-source release.
 - **2026-06-17**: Project documentation cleanup.
@@ -51,6 +51,7 @@ Video preview: `assets/demo_en.mp4`.
 - **Player pose detection** - Supports RTMPose, RTMO, and Ultralytics YOLO Pose for human keypoint and skeleton detection.
 - **Shuttlecock detection** - Uses a YOLO model to detect shuttlecock positions and draw trajectories in the output video.
 - **Court coordinate mapping** - Manually annotates court keypoints and maps image coordinates to standard badminton court coordinates.
+- **Automatic court detection** - Matches visible white/yellow court lines against a standard badminton court model, with manual corner correction available in the WebUI.
 - **Player position tracking** - Tracks upper-court and lower-court players separately and records movement trajectories.
 - **Rally detection** - Detects rally start/end states from continuous court-view matching and records rally IDs in overlays and detection data.
 - **Motion statistics** - Computes movement distance, current speed, maximum speed, and rally counts.
@@ -167,6 +168,10 @@ Open the URL printed in the terminal (default `http://127.0.0.1:7860`) and:
 2. Click "Detect Court" to auto-detect court boundaries. To correct, click 4 corners on the image then click "Apply Manual Corners".
 3. Adjust analysis settings (pose model, language, visualization options, etc.).
 4. Click "Run Analysis" and wait for the progress bar. Results include the annotated video, heatmaps/scatter plots, and detection data.
+
+| Court Detection and Settings | Analysis Results |
+| --- | --- |
+| ![WebUI court detection screen](assets/webui0-en.png) | ![WebUI results screen](assets/webui1-en.png) |
 
 The WebUI is optional — the CLI workflow is unchanged.
 
