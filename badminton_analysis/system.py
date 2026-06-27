@@ -159,8 +159,13 @@ class BadmintonAnalysisSystem:
         self.frame_width = 0
         self.frame_height = 0
         self.performance_log_interval_frames = 150
-    def process_video(self):
-        """Process the input video."""
+    def process_video(self, progress_callback=None):
+        """Process the input video.
+
+        Args:
+            progress_callback: Optional callable(frame_count, total_frames)
+                invoked after each frame so callers can report progress.
+        """
         self.start_time = time.time()
 
         cap = cv2.VideoCapture(self.video_path)
@@ -217,6 +222,8 @@ class BadmintonAnalysisSystem:
                 break
             frame_count += 1
             frame, detect_frame_count = self._process_frame(frame, template_gray, corners, roi_corners, frame_count, out, detect_frame_count)
+            if progress_callback is not None:
+                progress_callback(frame_count, total_frames)
 
         self.end_time = time.time()
         processing_time = self.end_time - self.start_time

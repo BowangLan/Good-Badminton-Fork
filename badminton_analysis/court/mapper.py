@@ -113,6 +113,77 @@ def compute_expanded_roi(court_corners, image_shape):
     return [(x1, y1), (x2, y2)]
 
 
+def auto_detect_preview(image):
+    """
+    Run auto court detection and return the result without any GUI.
+
+    Args:
+        image: Court template image (BGR numpy array).
+
+    Returns:
+        (corners, preview_bgr) where *corners* is a list of 4 (x, y) tuples
+        in the original image resolution (or None if detection failed), and
+        *preview_bgr* is an annotated preview image (BGR numpy array).
+    """
+    if not isinstance(image, np.ndarray):
+        return None, None
+
+    original_height, original_width = image.shape[:2]
+    fixed_size = (1080, 720)
+    base_image = cv2.resize(image, fixed_size)
+
+    auto_corners, _line_mask, auto_debug = auto_detect_court_corners(base_image)
+    if auto_corners:
+        roi_corners = compute_expanded_roi(auto_corners, base_image.shape)
+        preview = render_auto_court_preview(base_image, auto_corners, roi_corners, auto_debug)
+        scale_x = original_width / fixed_size[0]
+        scale_y = original_height / fixed_size[1]
+        original_corners = [(int(x * scale_x), int(y * scale_y)) for x, y in auto_corners]
+        return original_corners, preview
+    else:
+        preview = render_auto_court_preview(base_image, None, None, auto_debug)
+        return None, preview
+
+
+def resolve_court_corners(image, manual_corners=None):
+    """
+    Headless court corner resolution — no GUI windows.
+
+    If *manual_corners* (4 points in the original image resolution) are
+    provided they are used directly.  Otherwise auto-detection is attempted
+    on a 1080x720 resize and the results are scaled back.
+
+    Args:
+        image: Court template image (BGR numpy array).
+        manual_corners: Optional list of 4 (x, y) tuples.
+
+    Returns:
+        (corners, roi_corners, mid_height) — same contract as annotate_court.
+        Returns (None, None, None) on failure.
+    """
+    if not isinstance(image, np.ndarray):
+        return None, None, None
+
+    original_height, original_width = image.shape[:2]
+
+    if manual_corners and len(manual_corners) == 4:
+        corners = [(int(x), int(y)) for x, y in manual_corners]
+    else:
+        fixed_size = (1080, 720)
+        base_image = cv2.resize(image, fixed_size)
+        auto_corners, _line_mask, _debug = auto_detect_court_corners(base_image)
+        if not auto_corners:
+            return None, None, None
+        scale_x = original_width / fixed_size[0]
+        scale_y = original_height / fixed_size[1]
+        corners = [(int(x * scale_x), int(y * scale_y)) for x, y in auto_corners]
+
+    roi_corners = compute_expanded_roi(corners, image.shape)
+    court_mapper = CourtMapper(corners)
+    _, mid_height = court_mapper.draw_court_overlay(image)
+    return corners, roi_corners, mid_height
+
+
 def annotate_court(image, auto_preview_path=None):
     """
     Interactive tool to annotate court corners on an image.
@@ -141,12 +212,12 @@ def annotate_court(image, auto_preview_path=None):
             key = cv2.waitKey(1) & 0xFF
             if key in (13, 10, ord('y'), ord('Y')):
                 cv2.destroyWindow("Auto court detection")
-                court_mapper = CourtMapper(auto_corners)
-                _, auto_mid_height = court_mapper.draw_court_overlay(base_image)
                 scale_x = original_width / fixed_size[0]
                 scale_y = original_height / fixed_size[1]
                 original_corners = [(int(x * scale_x), int(y * scale_y)) for x, y in auto_corners]
                 original_roi_corners = [(int(x * scale_x), int(y * scale_y)) for x, y in auto_roi_corners]
+                court_mapper = CourtMapper(auto_corners)
+                _, auto_mid_height = court_mapper.draw_court_overlay(base_image)
                 return original_corners, original_roi_corners, int(auto_mid_height * scale_y)
             if key in (27, ord('m'), ord('M'), ord('r'), ord('R')):
                 cv2.destroyWindow("Auto court detection")

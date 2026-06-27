@@ -21,6 +21,7 @@ Video preview: `assets/demo_en.mp4`.
 
 ## 🆕 Changelog
 
+- **2026-06-24**: Added Gradio WebUI for browser-based video upload, court detection, parameter configuration, and result viewing.
 - **2026-06-23**: Added automatic court boundary detection.
 - **2026-06-20**: Initial open-source release.
 - **2026-06-17**: Project documentation cleanup.
@@ -40,6 +41,7 @@ Video preview: `assets/demo_en.mp4`.
 - [ ] More accurate shuttlecock detection model
 - [ ] More complete stroke statistics
 - [x] Automatic court keypoint detection
+- [x] Gradio WebUI (browser-based, no CLI required)
 - [ ] Batch video analysis workflow
 
 ---
@@ -55,6 +57,7 @@ Video preview: `assets/demo_en.mp4`.
 - **Visual output** - Generates annotated videos with skeletons, trajectories, statistics, and court trajectory overlays.
 - **Position charts** - Automatically generates player position heatmaps and scatter plots.
 - **Chinese / English display** - Switch visualization text with `--language zh/en`.
+- **WebUI** - Browser-based interface built with Gradio. Upload videos, detect the court, configure parameters, and view results without touching the command line.
 - **Local execution** - Videos, models, and analysis outputs stay on your local machine.
 
 ## Requirements
@@ -144,10 +147,32 @@ pip install --force-reinstall -r requirements.txt
 ```
 
 
+### WebUI Installation (Optional)
+
+The WebUI is built with Gradio and requires an additional dependency:
+
+```bash
+pip install -r requirements-webui.txt
+```
+
+Launch the WebUI:
+
+```bash
+python -m webui.app
+```
+
+Open the URL printed in the terminal (default `http://127.0.0.1:7860`) and:
+
+1. Upload a match video and a court template image.
+2. Click "Detect Court" to auto-detect court boundaries. To correct, click 4 corners on the image then click "Apply Manual Corners".
+3. Adjust analysis settings (pose model, language, visualization options, etc.).
+4. Click "Run Analysis" and wait for the progress bar. Results include the annotated video, heatmaps/scatter plots, and detection data.
+
+The WebUI is optional — the CLI workflow is unchanged.
+
 ## 📝 Usage
 
-
-### First Run Workflow
+### First Run Workflow (CLI)
 
 1. Prepare the input video and shuttlecock detection weight.
 2. Run the basic command:
@@ -250,6 +275,9 @@ badminton_analysis/
 ├── media/           # Video/audio processing
 ├── tracking/        # Player tracking
 └── visualization/   # Video overlays, statistics charts, and position plots
+webui/
+├── app.py           # Gradio WebUI interface and launch entry point
+└── pipeline.py      # WebUI analysis pipeline orchestration
 ```
 
 ## Acknowledgements
