@@ -37,7 +37,7 @@ def load_runtime_dependencies():
     except ModuleNotFoundError as exc:
         raise RuntimeError(
             f"Missing Python dependency: {exc.name}. "
-            "Install dependencies with: pip install -r requirements.txt"
+            "Install dependencies with: uv sync"
         ) from exc
 
     cv2 = _cv2

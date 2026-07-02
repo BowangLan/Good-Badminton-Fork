@@ -63,7 +63,8 @@
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.9+ (managed automatically by uv)
+- [uv](https://docs.astral.sh/uv/) package manager
 - FFmpeg available in system `PATH`
 - Shuttlecock YOLO detection weight, downloaded from [GitHub Releases](https://github.com/yo-WASSUP/Good-Badminton/releases/latest)
 
@@ -88,24 +89,37 @@ Use `--performance-stats` to print a compact timing summary about every 5 second
 
 ## 🚀 Installation
 
-The default dependencies use CPU PyTorch and ONNX Runtime.
+This project uses [uv](https://docs.astral.sh/uv/) to manage dependencies and the virtual environment. The default dependencies use CPU PyTorch and ONNX Runtime.
 
-### Windows
+Install uv first (if you haven't already):
 
 ```bash
-python -m venv .venv
-.\.venv\Scripts\activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### Linux / macOS
+### Install dependencies (Windows / Linux / macOS)
+
+From the project root:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+uv sync
+```
+
+`uv sync` creates a `.venv` and installs all dependencies (Linux/Windows automatically use the PyTorch CPU index; macOS uses PyPI).
+
+There are two ways to run commands:
+
+```bash
+# Option 1: run directly with uv run (no manual activation needed)
+uv run python main.py --video-path videos/demo.mp4
+
+# Option 2: activate the virtual environment first
+source .venv/bin/activate        # Windows: .\.venv\Scripts\activate
+python main.py --video-path videos/demo.mp4
 ```
 
 ### GPU Acceleration (Windows / NVIDIA)
@@ -115,14 +129,11 @@ Prerequisites:
 - NVIDIA driver installed, and `nvidia-smi` works correctly.
 - CUDA 12.1 PyTorch wheels are recommended.
 
-PowerShell:
+Install the CUDA build of PyTorch and the GPU ONNX Runtime with uv:
 
 ```bash
-.\.venv\Scripts\activate
-
-pip uninstall -y torch torchvision onnxruntime onnxruntime-gpu
-pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 --index-url https://download.pytorch.org/whl/cu121
-pip install onnxruntime-gpu==1.20.1
+uv pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+uv pip install onnxruntime-gpu==1.20.1
 ```
 
 Verify GPU availability:
@@ -144,22 +155,22 @@ CUDAExecutionProvider
 Switch back to CPU dependencies:
 
 ```bash
-pip install --force-reinstall -r requirements.txt
+uv sync --reinstall
 ```
 
 
 ### WebUI Installation (Optional)
 
-The WebUI is built with Gradio and requires an additional dependency:
+The WebUI is built with Gradio and is installed as an optional dependency group:
 
 ```bash
-pip install -r requirements-webui.txt
+uv sync --extra webui
 ```
 
 Launch the WebUI:
 
 ```bash
-python -m webui.app
+uv run python -m webui.app
 ```
 
 Open the URL printed in the terminal (default `http://127.0.0.1:7860`) and:

@@ -63,7 +63,8 @@
 
 ## 📋 系统要求
 
-- Python 3.8+
+- Python 3.9+（由 uv 自动管理）
+- [uv](https://docs.astral.sh/uv/) 包管理器
 - FFmpeg，并已加入系统 `PATH`
 - 羽毛球 YOLO 检测权重，请从 [GitHub Releases](https://github.com/yo-WASSUP/Good-Badminton/releases/latest)  下载
 
@@ -88,24 +89,37 @@ pose 0.02s, shuttlecock 0.02s, shuttle draw 0.00s, players draw 0.01s, court dra
 
 ## 🚀 安装指南
 
-默认依赖使用 CPU 版 PyTorch 和 ONNX Runtime。
+本项目使用 [uv](https://docs.astral.sh/uv/) 管理依赖和虚拟环境。默认依赖使用 CPU 版 PyTorch 和 ONNX Runtime。
 
-### Windows
+先安装 uv（若尚未安装）：
 
 ```bash
-python -m venv .venv
-.\.venv\Scripts\activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### Linux / macOS
+### 安装依赖（Windows / Linux / macOS 通用）
+
+在项目根目录执行：
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+uv sync
+```
+
+`uv sync` 会自动创建 `.venv` 虚拟环境并安装所有依赖（Linux/Windows 自动使用 PyTorch CPU 索引，macOS 使用 PyPI）。
+
+运行命令有两种方式：
+
+```bash
+# 方式一：用 uv run 直接运行（无需手动激活环境）
+uv run python main.py --video-path videos/demo.mp4
+
+# 方式二：先激活虚拟环境
+source .venv/bin/activate        # Windows: .\.venv\Scripts\activate
+python main.py --video-path videos/demo.mp4
 ```
 
 ### GPU 加速（Windows / NVIDIA）
@@ -115,14 +129,11 @@ pip install -r requirements.txt
 - 已安装 NVIDIA 显卡驱动，`nvidia-smi` 可以正常输出显卡信息。
 - 推荐使用 CUDA 12.1 对应的 PyTorch wheel。
 
-PowerShell：
+先用 uv 安装 CUDA 版 PyTorch 和 GPU 版 ONNX Runtime：
 
 ```bash
-.\.venv\Scripts\activate
-
-pip uninstall -y torch torchvision onnxruntime onnxruntime-gpu
-pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 --index-url https://download.pytorch.org/whl/cu121
-pip install onnxruntime-gpu==1.20.1
+uv pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 --index-url https://download.pytorch.org/whl/cu121
+uv pip install onnxruntime-gpu==1.20.1
 ```
 
 验证 GPU 是否生效：
@@ -144,21 +155,21 @@ CUDAExecutionProvider
 切回 CPU 版：
 
 ```bash
-pip install --force-reinstall -r requirements.txt
+uv sync --reinstall
 ```
 
 ### WebUI 安装（可选）
 
-WebUI 基于 Gradio，需要额外安装依赖：
+WebUI 基于 Gradio，作为可选依赖组安装：
 
 ```bash
-pip install -r requirements-webui.txt
+uv sync --extra webui
 ```
 
 启动 WebUI：
 
 ```bash
-python -m webui.app
+uv run python -m webui.app
 ```
 
 浏览器打开终端输出的地址（默认 `http://127.0.0.1:7860`），即可使用：
