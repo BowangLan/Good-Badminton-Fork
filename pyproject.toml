@@ -27,6 +27,10 @@ dependencies = [
 webui = [
     "gradio>=4.0.0",
 ]
+scraping = [
+    "yt-dlp>=2024.1.0",
+    "rich>=13.0.0",
+]
 
 [tool.uv]
 # Keep the default PyPI index for macOS (the PyTorch CPU index has no macOS
