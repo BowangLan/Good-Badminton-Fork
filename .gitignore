@@ -16,6 +16,11 @@ results/
 outputs/
 *.log
 
+# Benchmark datasets (frames extracted locally); keep folder placeholders
+benchmarks/data/**
+!benchmarks/data/**/
+!benchmarks/data/**/.gitkeep
+
 # Model weights are intentionally not published
 weights/*
 !weights/.gitkeep
