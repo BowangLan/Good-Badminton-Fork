@@ -49,6 +49,14 @@ Output lands in `benchmarks/results/<benchmark>/<run_id>/`:
 
 `benchmarks/results/` is gitignored.
 
+## Benchmarks in this repo
+
+- **`court_detection`** — variants of the original 4-corner detector
+  (resolution / preprocessing sweeps). Below.
+- **`court_homography`** — literature-inspired strategies that output a full
+  model→image homography + court keypoint lattice, judged by shared
+  line-support metrics. See [court_homography/README.md](./court_homography/README.md).
+
 ## Court detection benchmark
 
 - **Data:** drop images into `benchmarks/data/court_detection/` (or pass

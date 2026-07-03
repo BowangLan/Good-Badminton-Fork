@@ -24,6 +24,7 @@ from datetime import datetime
 
 # Import benchmark plugins so they self-register.
 from . import court_detection  # noqa: F401
+from . import court_homography  # noqa: F401
 from .core import registry, report
 from .core.runner import run_benchmark, select_strategies
 
