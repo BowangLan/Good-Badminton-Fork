@@ -37,17 +37,46 @@ uv run python -m benchmarks.run court_detection \
 
 # Cleaner speed numbers: re-time each run, report the fastest
 uv run python -m benchmarks.run court_detection --timing-repeats 3
+
+# Tag a run (recorded in meta.json, appended to the id) without losing sortability
+uv run python -m benchmarks.run court_detection --label court2-vs-baseline
 ```
 
-Output lands in `benchmarks/results/<benchmark>/<run_id>/`:
+Output lands in `benchmarks/artifacts/results/<benchmark>/<run_id>/`:
 
 - `report.html` — open in a browser. Summary table (best-in-column highlighted)
   + a per-image grid comparing every strategy side by side.
 - `records.json` — every (strategy, sample) run: metrics, latency, corners, errors.
 - `summary.json` — per-strategy aggregates (mean/median/p95 of each metric).
+- `meta.json` — **run manifest**: benchmark, strategies, data dir, git commit
+  (`-dirty` if the tree had uncommitted changes), sample count, timestamp, label.
+  This is what makes a run understandable and reproducible after the fact.
 - `previews/` — annotated PNGs referenced by the report.
 
-`benchmarks/results/` is gitignored.
+**Run ids** are always a sortable timestamp (`YYYYMMDD-HHMMSS`); `--label`
+appends a readable suffix but never replaces the timestamp, so results stay
+chronologically sortable and self-describing. `benchmarks/artifacts/results/`
+is gitignored — runs are local scratch, regenerated on demand.
+
+## Directory layout
+
+```
+benchmarks/
+├── core/           # algorithm-agnostic engine (types, registry, dataset, runner, report)
+├── suites/         # one subpackage per benchmark definition (the "plugins")
+│   ├── court_detection/
+│   └── court_homography/
+├── artifacts/      # everything generated or dropped in locally (gitignored)
+│   ├── data/       # input datasets, one subfolder per benchmark
+│   └── results/    # run outputs: <benchmark>/<run_id>/
+├── run.py          # CLI entry point
+├── README.md
+└── DESIGN.md
+```
+
+The split is deliberate: **engine** (`core/`), **definitions** (`suites/`), and
+**artifacts** (`artifacts/`) never mix. A new benchmark is a folder in `suites/`;
+it never sits next to input/output folders.
 
 ## Benchmarks in this repo
 
@@ -55,44 +84,48 @@ Output lands in `benchmarks/results/<benchmark>/<run_id>/`:
   (resolution / preprocessing sweeps). Below.
 - **`court_homography`** — literature-inspired strategies that output a full
   model→image homography + court keypoint lattice, judged by shared
-  line-support metrics. See [court_homography/README.md](./court_homography/README.md).
+  line-support metrics. See [suites/court_homography/README.md](./suites/court_homography/README.md).
 
 ## Court detection benchmark
 
-- **Data:** drop images into `benchmarks/data/court_detection/` (or pass
-  `--data <folder>`). No labeling needed.
-- **Strategies** (`court_detection/strategies.py`): `baseline_1080x720`,
+- **Data:** drop images into `benchmarks/artifacts/data/court_detection/` (or
+  pass `--data <folder>`). No labeling needed.
+- **Strategies** (`suites/court_detection/strategies.py`): `baseline_1080x720`,
   `lowres_720x480`, `highres_1440x960`, `clahe_1080x720`. Each runs the same
   `auto_detect_court_corners` under different working resolution / preprocessing.
 - **Metrics:** `detected`, `score`, `reference_score`, `horizontal_pattern_score`,
   `reference_supported_lines`, segment counts, `latency_ms`.
 
-### Dataset: extract frames from videos
+### Dataset
 
-`benchmarks/data/court_detection/` is the default data dir and is **gitignored**
-(only `.gitkeep` placeholders are tracked), so datasets are built locally.
+`benchmarks/artifacts/data/court_detection/` is the default data dir and is
+**gitignored** (only `.gitkeep` placeholders are tracked), so datasets are built
+locally. The loader reads it recursively, so any subfolder structure works.
 
-`tools/extract_benchmark_frames.py` builds one by sampling random frames from
-videos: it selects videos by filename regex and writes N random frames per video
-into `set1..setN/` subfolders (one frame per video per set, giving comparable
-input sets). Sampling is seeded (reproducible) and drawn from the middle 80% of
-each clip to avoid intros/black frames.
+The current dataset is a hand-curated **difficulty split** (harder cameras/courts
+in higher levels):
 
-Reproduce the current dataset (2 frames each from the `0x_`-named videos):
+```
+benchmarks/artifacts/data/court_detection/
+├── level1/   # 9 clean broadcast frames
+├── level2/   # 3 harder frames
+└── level3/   # 2 hardest frames
+```
+
+Alternatively, `tools/extract_benchmark_frames.py` builds a dataset by sampling
+random frames from videos: it selects videos by filename regex and writes N
+random frames per video into `set1..setN/` subfolders (one frame per video per
+set). Sampling is seeded (reproducible) and drawn from the middle 80% of each
+clip to avoid intros/black frames:
 
 ```bash
 uv run python -m tools.extract_benchmark_frames \
     --videos-dir videos --pattern '^0[0-9]_' \
-    --out benchmarks/data/court_detection --frames-per-video 2 --seed 42
+    --out benchmarks/artifacts/data/court_detection --frames-per-video 2 --seed 42
 ```
 
-Produces:
-
-```
-benchmarks/data/court_detection/
-├── set1/   # 9 frames, one per matched video
-└── set2/   # 9 frames, one per matched video
-```
+Options: `--pattern` (filename regex), `--frames-per-video` (number of sets),
+`--seed` (change to resample different frames), `--videos-dir`, `--out`.
 
 Then run the benchmark with no `--data` flag (it reads the default dir, recursively):
 
@@ -100,12 +133,9 @@ Then run the benchmark with no `--data` flag (it reads the default dir, recursiv
 uv run python -m benchmarks.run court_detection
 ```
 
-Options: `--pattern` (filename regex), `--frames-per-video` (number of sets),
-`--seed` (change to resample different frames), `--videos-dir`, `--out`.
-
 ### Add a new strategy
 
-In `court_detection/strategies.py`, add an entry to `STRATEGIES`. The shared
+In `suites/court_detection/strategies.py`, add an entry to `STRATEGIES`. The shared
 `_detect(image, work_size, preprocess=...)` helper handles metrics + preview, so
 most variants are one line:
 
@@ -122,10 +152,11 @@ that returns your own `metrics`/`preview`/`info`.
 
 ## Add a new benchmark (future algorithms)
 
-1. Create `benchmarks/<my_algo>/` with `strategies.py` and `benchmark.py`.
+1. Create `benchmarks/suites/<my_algo>/` with `strategies.py` and `benchmark.py`.
 2. In `benchmark.py`, build a `Benchmark(...)` and call `register(BENCHMARK)`.
    Reuse `core.dataset.load_image_folder` or write your own `load_samples`.
-3. Import the package in `benchmarks/run.py` (next to `from . import court_detection`)
+   (Relative imports reach the engine at `...core`, e.g. `from ...core.types import Benchmark`.)
+3. Import the package in `benchmarks/run.py` (next to `from .suites import court_detection`)
    so it self-registers.
 
 The core (`benchmarks/core/`) is algorithm-agnostic: runner, timing,

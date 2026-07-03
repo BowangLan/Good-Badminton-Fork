@@ -2,13 +2,13 @@
 
 import os
 
-from ..core.dataset import load_image_folder
-from ..core.registry import register
-from ..core.types import Benchmark
+from ...core.dataset import load_image_folder
+from ...core.registry import register
+from ...core.types import Benchmark
 from .strategies import STRATEGIES
 
 # Default dataset location — drop your benchmark images here (prepared separately).
-DEFAULT_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "court_detection")
+DEFAULT_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "artifacts", "data", "court_detection")
 
 
 def _load(data_dir):

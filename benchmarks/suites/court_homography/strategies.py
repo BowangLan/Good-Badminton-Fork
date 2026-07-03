@@ -1,6 +1,6 @@
 """Strategies for the court_homography benchmark.
 
-Unlike benchmarks/court_detection (variants of ONE corner detector, judged by
+Unlike benchmarks/suites/court_detection (variants of ONE corner detector, judged by
 that detector's own quad scores), these are DIFFERENT algorithms that share
 one output contract — a model->image homography + the 30-point keypoint
 lattice — so they are all judged by the same mask-support metrics
@@ -28,7 +28,7 @@ from badminton_analysis.court_homography import (
     render_preview,
 )
 
-from ..core.types import Sample, Strategy, StrategyOutput
+from ...core.types import Sample, Strategy, StrategyOutput
 
 WORK_SIZE = (1080, 720)  # match the pipeline / court_detection default
 

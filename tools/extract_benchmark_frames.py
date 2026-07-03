@@ -8,7 +8,7 @@ separately.
 Example (used to seed the court-detection benchmark):
     uv run python -m tools.extract_benchmark_frames \\
         --videos-dir videos --pattern '^0[0-9]_' \\
-        --out benchmarks/data/court_detection --frames-per-video 2 --seed 42
+        --out benchmarks/artifacts/data/court_detection --frames-per-video 2 --seed 42
 """
 
 import argparse

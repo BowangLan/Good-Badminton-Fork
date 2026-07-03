@@ -15,7 +15,10 @@ def _save_preview(preview, run_dir, strategy_name, sample_id):
 
     previews_dir = os.path.join(run_dir, "previews")
     os.makedirs(previews_dir, exist_ok=True)
-    filename = f"{strategy_name}__{sample_id}.png"
+    # sample_id often already carries the source image extension (e.g. "…01_Lin_Dan.png").
+    # Strip it so we don't end up with "…01_Lin_Dan.png.png".
+    stem = os.path.splitext(sample_id)[0]
+    filename = f"{strategy_name}__{stem}.png"
     abs_path = os.path.join(previews_dir, filename)
     cv2.imwrite(abs_path, preview)
     return os.path.join("previews", filename)  # relative to run_dir

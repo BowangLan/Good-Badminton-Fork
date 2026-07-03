@@ -25,6 +25,15 @@ Four concepts, defined in `core/types.py`:
 A run produces one **`RunRecord`** per `(strategy, sample)` pair; the reporter
 aggregates records into per-strategy stats.
 
+### Provenance: every run is self-describing
+
+A run directory is named by a sortable timestamp (`YYYYMMDD-HHMMSS`, plus an
+optional `--label` suffix) and always contains a **`meta.json` manifest**: the
+benchmark, strategy set, data dir, sample count, timestamp, label, and the git
+commit that produced it (`-dirty` if the working tree was modified). This is a
+hard rule, not a convention — you never have to guess what a results folder was
+or whether it can be trusted/reproduced.
+
 ### Why "any numeric metric is auto-aggregated"
 
 A strategy just returns a `metrics` dict of numbers. The reporter takes the
@@ -49,7 +58,7 @@ aggregation, JSON, and the HTML summary **with zero core changes**.
                  │  report.write_json / write_html                                              │
                  └──────────────────────────────────────────────────────────────────────────┬─┘
                                                                                               │
-   results/<benchmark>/<run_id>/  ◀── report.html · records.json · summary.json · previews/ ──┘
+   artifacts/results/<benchmark>/<run_id>/  ◀── report · records · summary · meta.json · previews ─┘
 ```
 
 Module responsibilities:
@@ -101,21 +110,33 @@ has two sections:
 detection the shared `_detect(image, work_size, preprocess=...)` helper makes
 most variants one line.
 
-**New benchmark** — create `benchmarks/<algo>/` with `strategies.py` +
+**New benchmark** — create `benchmarks/suites/<algo>/` with `strategies.py` +
 `benchmark.py`; build a `Benchmark(...)`, call `register(BENCHMARK)`, and import
 the package in `run.py`. Reuse `core.dataset` loaders or write your own
 `load_samples`. Everything else (runner, timing, aggregation, reporting) is
-shared.
+shared. Suites live one level below `benchmarks/`, so relative imports of the
+engine use three dots: `from ...core.types import Benchmark`.
 
 ## Layout
 
+Three kinds of thing, three roots — they never mix:
+
 ```
 benchmarks/
-├── core/            # algorithm-agnostic engine (types, registry, dataset, runner, report)
-├── court_detection/ # first plugin: strategies.py + benchmark.py
-├── data/            # datasets, one subfolder per benchmark (you populate these)
-├── results/         # run outputs (gitignored)
-├── run.py           # CLI entry point
-├── README.md        # usage
-└── DESIGN.md        # this document
+├── core/               # ENGINE — algorithm-agnostic (types, registry, dataset, runner, report)
+├── suites/             # DEFINITIONS — one subpackage per benchmark ("plugins")
+│   ├── court_detection/    #   strategies.py + benchmark.py
+│   └── court_homography/    #   strategies.py + benchmark.py + README.md
+├── artifacts/          # ARTIFACTS — everything local/generated (gitignored)
+│   ├── data/               #   input datasets, one subfolder per benchmark
+│   └── results/            #   run outputs: <benchmark>/<run_id>/
+├── run.py              # CLI entry point
+├── README.md           # usage
+└── DESIGN.md           # this document
 ```
+
+Before this split, benchmark definitions, input data, and output results were
+flat siblings under `benchmarks/` — so a folder like `court_detection/` was
+ambiguous (definition? results?) and a benchmark couldn't be named `data` or
+`results` without colliding. Separating engine / definitions / artifacts removes
+that ambiguity and the collision risk.

@@ -15,7 +15,7 @@ from badminton_analysis.court.detector import (
 )
 from badminton_analysis.court.mapper import compute_expanded_roi
 
-from ..core.types import Sample, Strategy, StrategyOutput
+from ...core.types import Sample, Strategy, StrategyOutput
 
 # Keys pulled out of the detector's debug["details"] into flat metrics.
 _DETAIL_KEYS = (

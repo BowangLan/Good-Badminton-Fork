@@ -3,9 +3,9 @@
 Compares literature-inspired court-detection strategies that output a **full
 model→image homography + the 30-point court keypoint lattice**, instead of the
 4 corner points the original detector returns. Separate from
-`benchmarks/court_detection` because the output shape — and therefore the
+`benchmarks/suites/court_detection` because the output shape — and therefore the
 judging — is different; it reuses the same image dataset
-(`benchmarks/data/court_detection/`).
+(`benchmarks/artifacts/data/court_detection/`).
 
 ```bash
 uv run python -m benchmarks.run court_homography

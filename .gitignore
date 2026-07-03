@@ -16,10 +16,13 @@ results/
 outputs/
 *.log
 
+# Benchmark run outputs (regenerated locally, never committed)
+benchmarks/artifacts/results/**
+
 # Benchmark datasets (frames extracted locally); keep folder placeholders
-benchmarks/data/**
-!benchmarks/data/**/
-!benchmarks/data/**/.gitkeep
+benchmarks/artifacts/data/**
+!benchmarks/artifacts/data/**/
+!benchmarks/artifacts/data/**/.gitkeep
 
 # Model weights are intentionally not published
 weights/*

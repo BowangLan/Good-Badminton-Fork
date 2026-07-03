@@ -1,6 +1,6 @@
 """Court homography benchmark definition.
 
-Separate from benchmarks/court_detection because the output shape differs:
+Separate from benchmarks/suites/court_detection because the output shape differs:
 strategies here return a full model->image homography + keypoint lattice
 (not 4 corners), and are judged by shared mask-support metrics rather than
 the corner detector's internal quad scores. Reuses the same image dataset.
@@ -8,13 +8,13 @@ the corner detector's internal quad scores. Reuses the same image dataset.
 
 import os
 
-from ..core.dataset import load_image_folder
-from ..core.registry import register
-from ..core.types import Benchmark
+from ...core.dataset import load_image_folder
+from ...core.registry import register
+from ...core.types import Benchmark
 from .strategies import STRATEGIES
 
 # Same frames as court_detection — the algorithms differ, not the data.
-DEFAULT_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "court_detection")
+DEFAULT_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "artifacts", "data", "court_detection")
 
 
 def _load(data_dir):

@@ -14,21 +14,69 @@ Usage:
     # Cleaner speed numbers by re-timing each run
     uv run python -m benchmarks.run court_detection --timing-repeats 3
 
-Outputs land in benchmarks/results/<benchmark>/<run_id>/ (report.html, records.json, summary.json, previews/).
+    # Tag a run without breaking the sortable timestamp id
+    uv run python -m benchmarks.run court_detection --label court2-vs-baseline
+
+Outputs land in benchmarks/artifacts/results/<benchmark>/<run_id>/
+(report.html, records.json, summary.json, meta.json, previews/). The run id is
+always a sortable timestamp; --label is recorded in meta.json and appended to
+the id for readability.
 """
 
 import argparse
+import json
 import os
+import subprocess
 import sys
 from datetime import datetime
 
-# Import benchmark plugins so they self-register.
-from . import court_detection  # noqa: F401
-from . import court_homography  # noqa: F401
+# Import benchmark suites so they self-register.
+from .suites import court_detection  # noqa: F401
+from .suites import court_homography  # noqa: F401
 from .core import registry, report
 from .core.runner import run_benchmark, select_strategies
 
-RESULTS_ROOT = os.path.join(os.path.dirname(__file__), "results")
+RESULTS_ROOT = os.path.join(os.path.dirname(__file__), "artifacts", "results")
+
+
+def _git_commit():
+    """Short commit hash of the code that produced this run (or None)."""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=os.path.dirname(__file__),
+            capture_output=True, text=True, timeout=5,
+        )
+        rev = out.stdout.strip()
+        if out.returncode != 0 or not rev:
+            return None
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=os.path.dirname(__file__),
+            capture_output=True, text=True, timeout=5,
+        ).stdout.strip()
+        return rev + ("-dirty" if dirty else "")
+    except Exception:
+        return None
+
+
+def _write_manifest(run_dir, *, benchmark, run_id, label, strategies, data_dir,
+                    n_samples, timing_repeats, timestamp):
+    """Record what produced this run so it can be understood and reproduced."""
+    manifest = {
+        "benchmark": benchmark,
+        "run_id": run_id,
+        "label": label,
+        "timestamp": timestamp,
+        "git_commit": _git_commit(),
+        "strategies": [s.name for s in strategies],
+        "data_dir": os.path.normpath(data_dir) if data_dir else None,
+        "n_samples": n_samples,
+        "timing_repeats": timing_repeats,
+    }
+    with open(os.path.join(run_dir, "meta.json"), "w") as f:
+        json.dump(manifest, f, indent=2)
+    return manifest
 
 
 def _print_list():
@@ -53,7 +101,8 @@ def main(argv=None):
     parser.add_argument("--limit", type=int, default=None, help="max samples to run")
     parser.add_argument("--timing-repeats", type=int, default=1, help="re-time each run N times, report fastest")
     parser.add_argument("--no-previews", action="store_true", help="skip writing preview PNGs")
-    parser.add_argument("--run-id", default=None, help="override run id (default: timestamp)")
+    parser.add_argument("--label", default=None,
+                        help="human tag recorded in meta.json and appended to the timestamp id")
     args = parser.parse_args(argv)
 
     if args.list or not args.benchmark:
@@ -73,9 +122,23 @@ def main(argv=None):
     strategy_names = [s.strip() for s in args.strategies.split(",") if s.strip()]
     strategies = select_strategies(bench, strategy_names)
 
-    run_id = args.run_id or datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    label = args.label.strip() if args.label else None
+    run_id = f"{timestamp}-{label}" if label else timestamp
     run_dir = os.path.join(RESULTS_ROOT, bench.name, run_id)
     os.makedirs(run_dir, exist_ok=True)
+
+    _write_manifest(
+        run_dir,
+        benchmark=bench.name,
+        run_id=run_id,
+        label=label,
+        strategies=strategies,
+        data_dir=args.data or bench.default_data_dir,
+        n_samples=len(samples),
+        timing_repeats=args.timing_repeats,
+        timestamp=timestamp,
+    )
 
     print(f"Benchmark : {bench.name}")
     print(f"Strategies: {', '.join(s.name for s in strategies)}")
